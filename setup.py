@@ -9,7 +9,7 @@ setup(name='biotools_dxy',
         'Programming Language :: Python :: 3'
         ],
       keywords='bioinformatics tools',
-      url='http://github.com/yang_dongxu/biotools_dxy',
+      url='https://github.com/yang-dongxu/biotools_dxy',
       author='Dongxu Yang',
       author_email='yang_dongxu@qq.com',
       license='MIT',
