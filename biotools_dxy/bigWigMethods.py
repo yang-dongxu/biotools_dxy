@@ -44,6 +44,15 @@ def bw_getSignal_bins(
     inherit_cols = ["name"],
     prefix = "bin_", engine = "bbi"
     ):
+    '''
+    width: if width > 0, then use the center of the region, and resize to fit the width; if width <= 0, then use the region as it is
+    bins: number of bins
+    missing: value to fill in the missing region
+    scale: if True, then scale the signal by the mean of the whole bigwig file
+    strand: if True, then use the strand information to flip the signal
+    inherit_cols: columns to inherit from the regions. if "all", then inherit all columns, else, only inherit the columns in the list.
+    prefix: prefix for the signal columns. 
+    '''
     assert chrom_col in regions.columns
     assert start_col in regions.columns
     assert end_col in regions.columns
