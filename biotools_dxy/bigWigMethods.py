@@ -53,25 +53,27 @@ def bw_getSignal_bins(
         mid = (regions[start_col] + regions[end_col])//2
         regions[start_col] = mid - int(width/2)
         regions[end_col] = mid + int(width/2)
+    else:
+        pass
 
-        mtx = __bw_getSignal_bins_kernal(bw, regions, 
-            chrom_col = chrom_col, start_col = start_col, end_col = end_col, strand_col = strand_col, 
-            strand = strand, scale = scale, bins = bins, missing = missing, engine = engine
-            )
-        
-        allCols = [f"{prefix}{i}" for i in range(mtx.shape[1])]
-        df_signal = pd.DataFrame(data = mtx, columns = allCols)
+    mtx = __bw_getSignal_bins_kernal(bw, regions, 
+        chrom_col = chrom_col, start_col = start_col, end_col = end_col, strand_col = strand_col, 
+        strand = strand, scale = scale, bins = bins, missing = missing, engine = engine
+        )
+    
+    allCols = [f"{prefix}{i}" for i in range(mtx.shape[1])]
+    df_signal = pd.DataFrame(data = mtx, columns = allCols)
 
-        # if inherit_cols is "all": then inherit all columns
-        if inherit_cols == "all":
-            inherit_cols = regions_raw.columns
-        used_cols = [x for x in inherit_cols if x in regions_raw.columns]
-        for c in used_cols:
-            try:
-                df_signal[c] = regions_raw[c].values
-            except Exception as e:
-                print(f"Error: {c} not in regions")
-                raise(e)
+    # if inherit_cols is "all": then inherit all columns
+    if inherit_cols == "all":
+        inherit_cols = regions_raw.columns
+    used_cols = [x for x in inherit_cols if x in regions_raw.columns]
+    for c in used_cols:
+        try:
+            df_signal[c] = regions_raw[c].values
+        except Exception as e:
+            print(f"Error: {c} not in regions")
+            raise(e)
     return df_signal[used_cols + allCols]
 
 
