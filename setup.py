@@ -18,7 +18,8 @@ setup(name='biotools_dxy',
         'numpy',
         'pandas',
         'bioframe',
-        "pyranges"
+        "pyranges",
+        "pybbi"
       ],
       include_package_data=True,
       zip_safe=False)

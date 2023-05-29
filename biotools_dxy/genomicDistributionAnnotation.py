@@ -7,7 +7,7 @@ from .utilities import regions
 
 import logging
 
-def parse_refGTF(ref_gtf, chrom_size, tss_upstream = 2000, tss_downstream = 2000, distal = 10_000, *args, **kwargs):
+def parse_refGTF(ref_gtf, chrom_size, tss_upstream = 2000, tss_downstream = 2000, tes_upstream = 2000, tes_downstream = 2000, distal = 10_000, *args, **kwargs):
     """
     Parse reference annotation file in gtf format.
     Parameters
@@ -51,12 +51,14 @@ def parse_refGTF(ref_gtf, chrom_size, tss_upstream = 2000, tss_downstream = 2000
 
     # get features: tss, exon, intron, intergenic
     pr_tss = pr_refgtf.features.tss()
+    pr_tes = pr_refgtf.features.tes()
     pr_exon = pr_refgtf[pr_refgtf.Feature == "exon"]
     pr_intron = pr_refgtf.features.introns(by = "gene")
     pr_intergenic = pr_chromSize.subtract(pr_refgtf)
 
     # get promoter from tss and distal from intergenic
     pr_promoter = pr_tss.extend({"5": tss_upstream, "3": tss_downstream})
+    pr_tes = pr_tes.extend({"5": tes_upstream, "3": tes_downstream})
     pr_distal = pr_intergenic[pr_intergenic.lengths() > 2*distal].extend(-distal) # shrink to distal from gene
 
     # turn pyranges to bioframe 
@@ -64,10 +66,12 @@ def parse_refGTF(ref_gtf, chrom_size, tss_upstream = 2000, tss_downstream = 2000
     bf_intron = regions.pyranges_to_bioframe(pr_intron)
     bf_intergenic = regions.pyranges_to_bioframe(pr_intergenic)
     bf_promoter = regions.pyranges_to_bioframe(pr_promoter)
+    bf_tes = regions.pyranges_to_bioframe(pr_tes)
     bf_distal = regions.pyranges_to_bioframe(pr_distal)
 
     out = {
         "promoter": bf_promoter,
+        "tes": bf_tes,
         "exon": bf_exon,
         "intron": bf_intron,
         "intergenic": bf_intergenic,
@@ -78,7 +82,7 @@ def parse_refGTF(ref_gtf, chrom_size, tss_upstream = 2000, tss_downstream = 2000
 
 
 def byGene(
-    feature, ref_gtf, chrom_size = "mm10", tss_upstream = 2000, tss_downstream = 2000, distal = 10_000, 
+    feature, ref_gtf, chrom_size = "mm10", tss_upstream = 2000, tss_downstream = 2000, tes_upstream = 2000, tes_downstream = 2000, distal = 10_000, 
     chrom_col = "chrom", start_col = "start", end_col = "end", strand_col = "strand",
     use_strand:bool = False, count:bool = False, *args, **kwargs
 ):
@@ -94,6 +98,10 @@ def byGene(
         Upstream region of TSS to annotate.
     tss_downstream : int
         Downstream region of TSS to annotate.
+    tes_upstream : int
+        Upstream region of TES to annotate.
+    tes_downstream : int
+        Downstream region of TES to annotate.
     chrom_col : str
         Column name of chromosome.
     start_col : str
@@ -112,7 +120,7 @@ def byGene(
         Input DataFrame with additional columns: 'promoter', 'exon', 'intron', 'intergenic', 'distal'.
     """
     # parse ref_gtf
-    refs = parse_refGTF(ref_gtf, chrom_size = chrom_size, tss_upstream = tss_upstream, tss_downstream = tss_downstream, distal = distal, *args, **kwargs)
+    refs = parse_refGTF(ref_gtf, chrom_size = chrom_size, tss_upstream = tss_upstream, tss_downstream = tss_downstream, tes_upstream = tes_upstream, tes_downstream = tes_downstream, distal = distal, *args, **kwargs)
 
     feature = feature.copy()
 
@@ -120,7 +128,7 @@ def byGene(
     if use_strand:
         onterm = [strand_col]
     # get overlaps by bf.count_overlaps
-    for region in ["promoter", "exon", "intron", "intergenic", "distal"]:
+    for region in ["promoter","tes", "exon", "intron", "intergenic", "distal"]:
         feature[region] = bf.count_overlaps(
             feature, refs[region],
             cols1=(chrom_col, start_col, end_col), on = onterm, return_input=False
@@ -129,7 +137,7 @@ def byGene(
             feature[region] = feature[region].astype(bool)
     return feature
 
-def stat_features(regions: pd.DataFrame, features = ["promoter", "exon", "intron", "distal"], by=[]):
+def stat_features(regions: pd.DataFrame, features = ["promoter","tes", "exon", "intron", "distal"], by=[]):
     selected_cols = [col for col in features if col in regions.columns]
     grouped_cols = [col for col in by if col in regions.columns]
 
