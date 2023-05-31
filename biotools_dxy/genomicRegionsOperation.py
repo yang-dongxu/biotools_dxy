@@ -187,8 +187,8 @@ class BioRegions(pd.DataFrame):
 
         self.bf = BioFrameMethods(self)
 
-@wraps
 def wrap_bf(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
         return BioRegions(func(*args, **kwargs))
     return wrapper
