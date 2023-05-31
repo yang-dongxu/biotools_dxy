@@ -7,6 +7,7 @@ Self-defined packages for orgainze bioinformatics related functions
 ```{shell}
 git clone https://github.com/yang-dongxu/biotools_dxy.git
 
+cd biotools_dxy
 
 pip install -e ./
 ```
