@@ -108,10 +108,16 @@ def resize(
 class BioFrameMethods():
     methods_for_overwrite = [
         "is_bedframe",
-        "assign_view","closest","cluster","complement","count_overlaps","coverage"
+        "assign_view","closest","cluster","complement","count_overlaps","coverage",
         "expand","merge","overlap","select","select_indices","select_labels","select_mask",
         "setdiff","sort_bedframe","subtract","trim"
         ]
+    
+    methods_for_chain = [
+        "resize"
+
+    ] + methods_for_overwrite[1:]
+
     params_check = ["chrom_col", "start_col", "end_col", "strand_col"]
 
 
@@ -120,8 +126,7 @@ class BioFrameMethods():
         self.info = dict(
             chrom_col = self.parent._chrom_col, 
             start_col = self.parent._start_col, 
-            end_col = self.parent._end_col , 
-            strand_col = self.parent._strand_col
+            end_col = self.parent._end_col
             )
         self.cols = (self.parent._chrom_col, self.parent._start_col, self.parent._end_col)
 
@@ -131,6 +136,8 @@ class BioFrameMethods():
                 setattr(self, method_name, self.wrap_params(getattr(bf, method_name)))
             else:
                 setattr(self, method_name, getattr(bf, method_name))
+
+        self.make_chain()
 
 
     def wrap_cols(self,option="cols",**kwargs):
@@ -156,6 +163,27 @@ class BioFrameMethods():
                 new_func =  partial(func, self.parent, *args, **self.wrap_cols(option="cols",**kwargs))
         new_func.__doc__ = func.__doc__
         return new_func
+    
+    def make_chain(self, *args, **kwargs):
+        
+        def wrap_chain(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                o = func(*args, **kwargs)
+                o = BioRegions(
+                    o, 
+                    _chrom_col = self.parent._chrom_col,
+                    _start_col = self.parent._start_col,
+                    _end_col = self.parent._end_col
+                    )
+                return o
+            return wrapper
+        
+        for method_name in self.methods_for_chain:
+            if method_name in dir(self):
+                setattr(self, method_name, wrap_chain(getattr(self, method_name)))
+
+        return None
             
          
     def resize(self, size, fix = "center", *args, **kwargs):
@@ -165,8 +193,11 @@ class BioFrameMethods():
 
 
 class BioRegions(pd.DataFrame):
-    params_kept = ["_chrom_col", "_start_col", "_end_col", "_strand_col"]
-    params_kept_default = ["chrom", "start", "end", "strand"]
+    params_kept = ["_chrom_col", "_start_col", "_end_col"]
+    params_kept_default = ["chrom", "start", "end"]
+    methods_for_chain = [
+        "query", "assign","reset_index","drop_duplicates","sort_values","sort_index","merge"
+    ]
 
     def __init__(self,*args,**kwargs) -> None:
         raw_params = kwargs.copy()
@@ -179,13 +210,36 @@ class BioRegions(pd.DataFrame):
         for param, pdault in zip(BioRegions.params_kept, BioRegions.params_kept_default):
             self.__setattr__(param, pdault)
             if param in raw_params.keys():
-                setattr(self, param, kwargs[param])
+                setattr(self, param, raw_params[param])
 
 
         for param in BioRegions.params_kept:
-            assert getattr(self, param) in self.columns, f"{param=} not in columns! The column name should be set by {param} = 'column_name'"
+            assert getattr(self, param) in self.columns, f"{param=} not in columns! The column name should be set by {param} = 'column_name', and your setting is {getattr(self, param)}"
 
         self.bf = BioFrameMethods(self)
+        self.make_chain()
+
+
+    def make_chain(self, *args, **kwargs):
+        
+        def wrap_chain(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                o = func(*args, **kwargs)
+                o = BioRegions(
+                    o, 
+                    _chrom_col = self._chrom_col,
+                    _start_col = self._start_col,
+                    _end_col = self._end_col
+                    )
+                return o
+            return wrapper
+        
+        for method_name in self.methods_for_chain:
+            if method_name in dir(self):
+                setattr(self, method_name, wrap_chain(getattr(self, method_name)))
+
+        return None
 
 def wrap_bf(func):
     @wraps(func)
