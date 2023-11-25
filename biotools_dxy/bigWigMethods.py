@@ -39,7 +39,7 @@ def __bw_getSignal_bins_kernal(bw, regions, chrom_col = "chrom", start_col = "st
 def bw_getSignal_bins(
     bw, regions:pd.DataFrame, 
     chrom_col = "chrom",start_col = "start", end_col = "end", strand_col = "strand", 
-    width = 4000,bins = 100, missing = 0, 
+    width = 4000,bins = 1, missing = 0, 
     scale = False, strand = True, 
     inherit_cols = ["name"],
     prefix = "bin_", engine = "bbi"
