@@ -101,7 +101,12 @@ def plotHeatmapSplit(df,signalCols,splitCol="label",splitOrder =None, splitLabel
         print("use self-defined labels ...")
     splitLabelsDict = {i:j for i,j in zip(splitOrder, splitLabels)}
     splitOrder = [i for i in splitOrder if i in sizes.keys()]
-    heightRatios = [sizes[x] for x in splitOrder]
+    if "height_ratios" in kwargs.keys():
+        heightRatios = kwargs["height_ratios"]
+        del kwargs["height_ratios"]
+    else:
+        heightRatios = [sizes[x] for x in splitOrder]
+
 
     axs = fig.subplots(len(heightRatios), 1, gridspec_kw={'height_ratios': heightRatios})
     for i,ax in enumerate(axs):
