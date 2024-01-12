@@ -53,7 +53,7 @@ def parse_refGTF(ref_gtf, chrom_size, tss_upstream = 2000, tss_downstream = 2000
     pr_tss = pr_refgtf.features.tss()
     pr_tes = pr_refgtf.features.tes()
     pr_exon = pr_refgtf[pr_refgtf.Feature == "exon"]
-    pr_refgtf.features.introns(by = "transcript")
+    pr_intron = pr_refgtf.features.introns(by = "transcript")
     pr_intergenic = pr_chromSize.subtract(pr_refgtf)
 
     # get promoter from tss and distal from intergenic
