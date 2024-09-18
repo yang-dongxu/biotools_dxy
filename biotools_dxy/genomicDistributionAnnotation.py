@@ -53,7 +53,7 @@ def parse_refGTF(ref_gtf, chrom_size, tss_upstream = 2000, tss_downstream = 2000
     pr_tss = pr_refgtf.features.tss()
     pr_tes = pr_refgtf.features.tes()
     pr_exon = pr_refgtf[pr_refgtf.Feature == "exon"]
-    pr_intron = pr_refgtf.features.introns(by = "transcript")
+    pr_intron = pr_refgtf.features.introns(by = "gene")
     pr_intergenic = pr_chromSize.subtract(pr_refgtf)
 
     # get promoter from tss and distal from intergenic
@@ -128,7 +128,9 @@ def byGene(
     if use_strand:
         onterm = [strand_col]
     # get overlaps by bf.count_overlaps
-    for region in ["promoter","tes", "exon", "intron", "intergenic", "distal"]:
+    for region in ["promoter","tes", "exon", "intergenic", "distal"]:
+        assert region in refs
+        assert bf.is_bedframe(refs[region]), f"{region} must be bedframe"
         feature[region] = bf.count_overlaps(
             feature, refs[region],
             cols1=(chrom_col, start_col, end_col), on = onterm, return_input=False
@@ -156,14 +158,14 @@ def stat_features(regions: pd.DataFrame, features = ["promoter","tes", "exon", "
         return out
     
     if len(grouped_cols) == 0:
-        dfo = stat(regions, features)
+        dfo = stat(regions, selected_cols)
         dfo_long = pd.DataFrame(dfo, index = [0]).stack().to_frame().reset_index().rename(columns = {"level_1": "feature", 0: "count"}).drop(columns="level_0")
         dfo_long["percent"] = dfo_long["count"]/dfo_long["count"].sum()
         
     else:
         outs = []
         for g,df in regions.groupby(grouped_cols):
-            dict_out = stat(df, features)
+            dict_out = stat(df, selected_cols)
             if isinstance(g, tuple):
                 for col, val in zip(grouped_cols, g):
                     dict_out[col] = val
@@ -176,7 +178,7 @@ def stat_features(regions: pd.DataFrame, features = ["promoter","tes", "exon", "
         dfo_long = dfo.set_index(grouped_cols).stack().to_frame()\
             .reset_index().rename(columns = {"level_2": "feature", 0: "count"})
         dfo_long["percent"] = dfo_long.groupby(grouped_cols,group_keys=False)["count"].apply(lambda x: x/x.sum())
-    dfo_long["feature"] = pd.Categorical(dfo_long["feature"], features + ["other"])
+    # dfo_long["feature"] = pd.Categorical(dfo_long["feature"], features + ["other"])
     return dfo, dfo_long
 
 
